@@ -7,12 +7,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Areas\Admin\Controllers\" />
     <Folder Include="Areas\Admin\Data\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="15.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Klimaci.Core\Klimaci.Core.csproj" />
+    <ProjectReference Include="..\Klimaci.DAL\Klimaci.DAL.csproj" />
+    <ProjectReference Include="..\Klimaci.DTO\Klimaci.DTO.csproj" />
+    <ProjectReference Include="..\Klimaci.Entity\Klimaci.Entity.csproj" />
+    <ProjectReference Include="..\Klimaci.Services\Klimaci.Services.csproj" />
   </ItemGroup>
 
 </Project>

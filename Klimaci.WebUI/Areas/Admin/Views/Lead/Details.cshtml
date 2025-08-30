@@ -1,0 +1,35 @@
+﻿@using Klimaci.Entity
+@model Lead
+@{
+    ViewData["Title"] = "Lead Detay";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="container py-3">
+    <h1>@Model.Name</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div><b>Ad:</b> @Model.Name</div>
+            <div><b>E-posta:</b> @Model.Email</div>
+            <div><b>Telefon:</b> @Model.Phone</div>
+            <div><b>Kaynak:</b> @Model.Source</div>
+            <hr />
+            <div><b>Konu:</b> @Model.Subject</div>
+            <pre class="mb-0" style="white-space:pre-wrap">@Model.Message</pre>
+        </div>
+    </div>
+
+    <form asp-action="Process" method="post" class="row g-2">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="col-md-3">
+            <select name="isProcessed" class="form-select">
+                <option value="false" selected="@(Model.IsProcessed==false)">Bekliyor</option>
+                <option value="true" selected="@(Model.IsProcessed==true)">İşlendi</option>
+            </select>
+        </div>
+        <div class="col-md-6"><input name="notes" class="form-control" value="@Model.Notes" placeholder="Not" /></div>
+        <div class="col-md-3 d-grid"><button class="btn btn-primary">Kaydet</button></div>
+        @Html.AntiForgeryToken()
+    </form>
+</div>

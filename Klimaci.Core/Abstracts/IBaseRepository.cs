@@ -26,5 +26,11 @@ namespace Klimaci.Core.Abstracts
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate = null, bool ignoreQueryFilter = false);
         Task<decimal> SumAsync(Expression<Func<TEntity, decimal>> selector,
                     Expression<Func<TEntity, bool>> predicate = null, bool ignoreQueryFilter = false);
+
+        Task<(IReadOnlyList<TEntity> Items, int Total)> PagedAsync(
+         int page, int pageSize,
+         Expression<Func<TEntity, bool>> predicate = null,
+         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+         bool ignoreQueryFilter = false);
     }
 }

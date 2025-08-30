@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Klimaci.Core\Klimaci.Core.csproj" />
+    <ProjectReference Include="..\Klimaci.Entity\Klimaci.Entity.csproj" />
   </ItemGroup>
 
 </Project>

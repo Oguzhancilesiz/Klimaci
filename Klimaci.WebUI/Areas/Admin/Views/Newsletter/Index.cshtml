@@ -1,0 +1,74 @@
+﻿@using Klimaci.Core.Paging
+@using Klimaci.Entity
+@model PagedResult<NewsletterSubscriber>
+@{
+    ViewData["Title"] = "Bülten Aboneleri";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    string qSearch = Context.Request.Query["search"]!;
+    string qOnlyActive = Context.Request.Query["onlyActive"]!;
+}
+<div class="container py-3">
+    <h1>Bülten Aboneleri</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-6">
+            <input name="search" class="form-control" value="@qSearch" placeholder="E-posta / ad içinde ara" />
+        </div>
+        <div class="col-md-3">
+            <select name="onlyActive" class="form-select">
+                <option value="false" selected="@(qOnlyActive=="false" || string.IsNullOrEmpty(qOnlyActive))">Tümü</option>
+                <option value="true" selected="@(qOnlyActive=="true")">Sadece aktif</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-grid">
+            <button class="btn btn-primary">Filtrele</button>
+        </div>
+    </form>
+
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>E-posta</th>
+                <th>Ad</th>
+                <th>Onay</th>
+                <th>Çıkış</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in Model.Items)
+            {
+                <tr>
+                    <td>@x.Email</td>
+                    <td>@x.Name</td>
+                    <td>@(x.ConfirmedAt?.ToLocalTime().ToString("g") ?? "-")</td>
+                    <td>@(x.UnsubscribedAt?.ToLocalTime().ToString("g") ?? "-")</td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@x.Id" class="btn btn-sm btn-outline-secondary">Düzenle</a>
+                        <form asp-action="Delete" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@x.Id" />
+                            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Silinsin mi?')">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var totalPages = (int)Math.Ceiling((double)Model.Total / Model.PageSize);
+        var page = Model.Page;
+    }
+    <nav aria-label="Sayfalama">
+        <ul class="pagination">
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                <li class="page-item @(p == page ? "active" : "")">
+                    <a class="page-link" href="?page=@p&pageSize=@Model.PageSize&search=@qSearch&onlyActive=@qOnlyActive">@p</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>

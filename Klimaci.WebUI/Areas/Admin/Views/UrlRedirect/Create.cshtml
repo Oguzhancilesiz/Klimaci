@@ -1,0 +1,47 @@
+﻿@using Klimaci.DTO.UrlRedirectDTOs
+@model UrlRedirectAddDTO
+@{
+    ViewData["Title"] = "Yeni Yönlendirme";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="container py-3">
+    <h1>Yeni Yönlendirme</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <form asp-action="Create" method="post" class="row g-3">
+        <div class="col-md-5">
+            <label asp-for="OldPath" class="form-label"></label>
+            <input asp-for="OldPath" class="form-control" />
+            <span asp-validation-for="OldPath" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-5">
+            <label asp-for="NewPath" class="form-label"></label>
+            <input asp-for="NewPath" class="form-control" />
+            <span asp-validation-for="NewPath" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-2">
+            <label asp-for="StatusCode" class="form-label"></label>
+            <input asp-for="StatusCode" type="number" class="form-control" />
+            <span asp-validation-for="StatusCode" class="text-danger"></span>
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" asp-for="IsPublished" />
+                <label class="form-check-label" asp-for="IsPublished">Yayında</label>
+            </div>
+        </div>
+
+        <div class="col-12 d-flex gap-2 mt-2">
+            <button class="btn btn-primary">Kaydet</button>
+            <a asp-action="Index" class="btn btn-light">Geri</a>
+        </div>
+        @Html.AntiForgeryToken()
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

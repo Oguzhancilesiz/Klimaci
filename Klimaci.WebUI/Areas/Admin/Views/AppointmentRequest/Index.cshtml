@@ -1,0 +1,57 @@
+﻿@using Klimaci.Core.Paging
+@using Klimaci.Entity
+@model PagedResult<AppointmentRequest>
+@{
+    ViewData["Title"] = "Randevu Talepleri";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="container py-3">
+    <h1>Randevu Talepleri</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-6"><input name="search" class="form-control" value="@Context.Request.Query["search"]" placeholder="İsim / e-posta / telefon" /></div>
+        <div class="col-md-3">
+            <select class="form-select" name="onlyUnprocessed">
+                <option value="false" selected="@(Context.Request.Query["onlyUnprocessed"]=="false")">Hepsi</option>
+                <option value="true" selected="@(Context.Request.Query["onlyUnprocessed"]=="true")">Sadece bekleyen</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-grid"><button class="btn btn-primary">Filtrele</button></div>
+    </form>
+
+    <table class="table table-striped align-middle">
+        <thead><tr><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Tercih Tarih</th><th>Durum</th><th class="text-end">İşlem</th></tr></thead>
+        <tbody>
+            @foreach (var m in Model.Items)
+            {
+                <tr>
+                    <td>@m.Name</td>
+                    <td>@m.Email</td>
+                    <td>@m.Phone</td>
+                    <td>@(m.PreferredDate?.ToString("yyyy-MM-dd")) @(m.PreferredTime)</td>
+                    <td><span class="badge @(m.IsProcessed ? "bg-success":"bg-warning text-dark")">@(m.IsProcessed ? "İşlendi" : "Bekliyor")</span></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@m.Id">Görüntüle</a>
+                        <form method="post" asp-action="Delete" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@m.Id" /><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Silinsin mi?')">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var totalPages = (int)Math.Ceiling((double)Model.Total / Model.PageSize); var page = Model.Page;
+    }
+    <nav>
+        <ul class="pagination">
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                <li class="page-item @(p==page?"active":"")"><a class="page-link" href="?page=@p&pageSize=@Model.PageSize&search=@Context.Request.Query["search"]&onlyUnprocessed=@Context.Request.Query["onlyUnprocessed"]">@p</a></li>
+            }
+        </ul>
+    </nav>
+</div>

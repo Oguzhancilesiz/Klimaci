@@ -1,50 +1,432 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@{
+    Layout = null;
+    var curController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? "");
+    var curAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? "");
+    var title = (ViewData["Title"] as string) ?? "Yönetim";
+
+    var settingsCtrls = new[] { "User", "Role", "Setting" };
+    var navSeoCtrls = new[] { "Navigation", "UrlRedirect" };
+    var contentCtrls = new[] { "Project", "ServiceItem", "Page", "Partner", "Brand", "Media", "Testimonial", "TeamMember", "Office", "Faq" };
+    var blogCtrls = new[] { "BlogPost", "Category", "Tag" };
+    var mktCtrls = new[] { "ContactMessage", "Newsletter", "Lead", "AppointmentRequest" };
+
+    bool openSettings = settingsCtrls.Contains(curController);
+    bool openNavSeo = navSeoCtrls.Contains(curController);
+    bool openContent = contentCtrls.Contains(curController);
+    bool openBlog = blogCtrls.Contains(curController);
+    bool openMkt = mktCtrls.Contains(curController);
+}
+<!DOCTYPE html>
+<html lang="tr">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Klimaci.WebUI</title>
-    <script type="importmap"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title - Admin</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Klimaci.WebUI.styles.css" asp-append-version="true" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    @RenderSection("Head", required: false)
+    <style>
+        :root {
+            --sidebar-w: 280px;
+            --sb-bg: linear-gradient(180deg, #0f172a 0%, #111827 100%); /* slate-950 -> slate-900 */
+            --sb-text: #e5e7eb; /* gray-200 */
+            --sb-muted: #9ca3af; /* gray-400 */
+            --sb-hover: rgba(255,255,255,.07);
+            --sb-active: rgba(255,255,255,.16);
+            --ring: #3b82f6; /* blue-500 */
+        }
+
+        body.admin {
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        .admin-wrap {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: var(--sidebar-w);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            background: var(--sb-bg);
+            color: var(--sb-text);
+            box-shadow: inset -1px 0 0 rgba(0,0,0,.15);
+            overflow: hidden auto;
+        }
+
+            .admin-sidebar::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .admin-sidebar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .admin-sidebar::-webkit-scrollbar-thumb {
+                background: rgba(255,255,255,.12);
+                border-radius: 6px;
+            }
+
+        .brand {
+            font-weight: 800;
+            letter-spacing: .3px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+            .brand small {
+                color: var(--sb-muted);
+                font-weight: 600;
+            }
+
+        .menu-search input {
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.08);
+            color: var(--sb-text);
+        }
+
+            .menu-search input::placeholder {
+                color: #cbd5e1;
+            }
+
+        .menu-section {
+            font-size: .75rem;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--sb-muted);
+            margin: .75rem .25rem .35rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .section-toggle {
+            width: 100%;
+            text-align: left;
+            border: 0;
+            background: transparent;
+            color: var(--sb-text);
+            padding: .55rem .65rem;
+            border-radius: .5rem;
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+        }
+
+            .section-toggle:hover {
+                background: var(--sb-hover);
+            }
+
+            .section-toggle .chev {
+                transition: transform .18s ease;
+            }
+
+        .menu-group.open .section-toggle .chev {
+            transform: rotate(90deg);
+        }
+
+        .menu-group > ul {
+            list-style: none;
+            margin: 0;
+            padding: 0 .25rem .35rem;
+        }
+
+            .menu-group > ul.collapsible {
+                height: 0;
+                overflow: hidden;
+                transition: height .2s ease;
+            }
+
+        .menu-group.open > ul.collapsible {
+            height: auto;
+            overflow: visible;
+        }
+
+        .admin-sidebar .nav-link {
+            color: var(--sb-text);
+            border-radius: .55rem;
+            padding: .45rem .65rem;
+            display: flex;
+            gap: .55rem;
+            align-items: center;
+        }
+
+            .admin-sidebar .nav-link .bi {
+                font-size: 1.05rem;
+                opacity: .9;
+            }
+
+            .admin-sidebar .nav-link:hover {
+                background: var(--sb-hover);
+                color: #fff;
+            }
+
+            .admin-sidebar .nav-link.active {
+                background: var(--sb-active);
+                color: #fff;
+                box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset;
+            }
+
+        .admin-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .admin-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        /* Mobile sidebar */
+        @@media (max-width: 991.98px) {
+            .admin-sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                z-index: 1040;
+                transform: translateX(-100%);
+                transition: transform .2s ease;
+            }
+
+            body.sidebar-open .admin-sidebar {
+                transform: translateX(0);
+            }
+
+            .offcanvas-backdrop-custom {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,.25);
+                display: none;
+                z-index: 1030;
+            }
+
+            body.sidebar-open .offcanvas-backdrop-custom {
+                display: block;
+            }
+        }
+
+        .small-muted {
+            color: var(--sb-muted);
+            font-size: .85rem;
+        }
+
+        /* focus ring */
+        .admin-sidebar a.nav-link:focus-visible,
+        .section-toggle:focus-visible,
+        #btnSidebar:focus-visible {
+            outline: 2px solid var(--ring);
+            outline-offset: 2px;
+        }
+    </style>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Klimaci.WebUI</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+<body class="admin">
+
+    <div class="admin-wrap">
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar d-flex flex-column p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <a class="brand" asp-area="Admin" asp-controller="Project" asp-action="Index">
+                    ⚙️ Admin <small>Panel</small>
+                </a>
+
+                <button class="btn btn-sm btn-outline-light d-lg-none" id="btnSidebarClose" title="Kapat">
+                    <i class="bi bi-x-lg"></i>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+            </div>
+
+            <div class="menu-search mb-2">
+                <input id="menuSearch" class="form-control form-control-sm" placeholder="Menüde ara..." />
+            </div>
+
+            <!-- AYAR -->
+            <div id="grp-settings" class="menu-group @(openSettings ? "open" : "")" data-group="grp-settings">
+                <div class="menu-section"><i class="bi bi-gear"></i> Ayar</div>
+                <button class="section-toggle" type="button">
+                    <i class="bi bi-chevron-right chev"></i> <span>Yönetim</span>
+                </button>
+                <ul class="nav flex-column collapsible">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Admin/Dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(curController=="User"?"active":"")" asp-area="Admin" asp-controller="User" asp-action="Index">
+                            <i class="bi bi-people"></i> Kullanıcılar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(curController=="Role"?"active":"")" asp-area="Admin" asp-controller="Role" asp-action="Index">
+                            <i class="bi bi-shield-lock"></i> Roller
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(curController=="Setting"?"active":"")" asp-area="Admin" asp-controller="Setting" asp-action="Index">
+                            <i class="bi bi-sliders"></i> Site Ayarları
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- NAVİGASYON & SEO -->
+            <div id="grp-navseo" class="menu-group @(openNavSeo ? "open" : "")" data-group="grp-navseo">
+                <div class="menu-section"><i class="bi bi-bezier2"></i> Navigasyon & SEO</div>
+                <button class="section-toggle" type="button">
+                    <i class="bi bi-chevron-right chev"></i> <span>Site Yapısı</span>
+                </button>
+                <ul class="nav flex-column collapsible">
+                    <li class="nav-item">
+                        <a class="nav-link @(curController=="Navigation"?"active":"")" asp-area="Admin" asp-controller="Navigation" asp-action="Index">
+                            <i class="bi bi-menu-button-wide"></i> Menüler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(curController=="UrlRedirect"?"active":"")" asp-area="Admin" asp-controller="UrlRedirect" asp-action="Index">
+                            <i class="bi bi-arrow-left-right"></i> URL Yönlendirmeleri
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- İÇERİK -->
+            <div id="grp-content" class="menu-group @(openContent ? "open" : "")" data-group="grp-content">
+                <div class="menu-section"><i class="bi bi-layout-text-sidebar-reverse"></i> İçerik</div>
+                <button class="section-toggle" type="button">
+                    <i class="bi bi-chevron-right chev"></i> <span>Modüller</span>
+                </button>
+                <ul class="nav flex-column collapsible">
+                    <li class="nav-item"><a class="nav-link @(curController=="Project"?"active":"")" asp-area="Admin" asp-controller="Project" asp-action="Index"><i class="bi bi-grid-3x3-gap"></i> Projeler</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="ServiceItem"?"active":"")" asp-area="Admin" asp-controller="ServiceItem" asp-action="Index"><i class="bi bi-tools"></i> Hizmetler</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Page"?"active":"")" asp-area="Admin" asp-controller="Page" asp-action="Index"><i class="bi bi-file-earmark-text"></i> Sayfalar</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Partner"?"active":"")" asp-area="Admin" asp-controller="Partner" asp-action="Index"><i class="bi bi-handshake"></i> Partnerler</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Brand"?"active":"")" asp-area="Admin" asp-controller="Brand" asp-action="Index"><i class="bi bi-tags"></i> Markalar</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Media"?"active":"")" asp-area="Admin" asp-controller="Media" asp-action="Index"><i class="bi bi-image"></i> Medya</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Testimonial"?"active":"")" asp-area="Admin" asp-controller="Testimonial" asp-action="Index"><i class="bi bi-chat-quote"></i> Referanslar</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="TeamMember"?"active":"")" asp-area="Admin" asp-controller="TeamMember" asp-action="Index"><i class="bi bi-people-fill"></i> Ekip</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Office"?"active":"")" asp-area="Admin" asp-controller="Office" asp-action="Index"><i class="bi bi-geo-alt"></i> Ofisler</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Faq"?"active":"")" asp-area="Admin" asp-controller="Faq" asp-action="Index"><i class="bi bi-question-circle"></i> SSS</a></li>
+                </ul>
+            </div>
+
+            <!-- BLOG -->
+            <div id="grp-blog" class="menu-group @(openBlog ? "open" : "")" data-group="grp-blog">
+                <div class="menu-section"><i class="bi bi-journal-text"></i> Blog</div>
+                <button class="section-toggle" type="button">
+                    <i class="bi bi-chevron-right chev"></i> <span>Yayınlar</span>
+                </button>
+                <ul class="nav flex-column collapsible">
+                    <li class="nav-item"><a class="nav-link @(curController=="BlogPost"?"active":"")" asp-area="Admin" asp-controller="BlogPost" asp-action="Index"><i class="bi bi-file-richtext"></i> Yazılar</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Category"?"active":"")" asp-area="Admin" asp-controller="Category" asp-action="Index"><i class="bi bi-collection"></i> Kategoriler</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Tag"?"active":"")" asp-area="Admin" asp-controller="Tag" asp-action="Index"><i class="bi bi-hash"></i> Etiketler</a></li>
+                </ul>
+            </div>
+
+            <!-- İLETİŞİM & PAZARLAMA -->
+            <div id="grp-mkt" class="menu-group @(openMkt ? "open" : "")" data-group="grp-mkt">
+                <div class="menu-section"><i class="bi bi-megaphone"></i> İletişim & Pazarlama</div>
+                <button class="section-toggle" type="button">
+                    <i class="bi bi-chevron-right chev"></i> <span>Gelenler</span>
+                </button>
+                <ul class="nav flex-column collapsible">
+                    <li class="nav-item"><a class="nav-link @(curController=="ContactMessage"?"active":"")" asp-area="Admin" asp-controller="ContactMessage" asp-action="Index"><i class="bi bi-envelope"></i> İletişim Mesajları</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Newsletter"?"active":"")" asp-area="Admin" asp-controller="Newsletter" asp-action="Index"><i class="bi bi-envelope-plus"></i> Bülten Aboneleri</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="Lead"?"active":"")" asp-area="Admin" asp-controller="Lead" asp-action="Index"><i class="bi bi-bullseye"></i> Lead’ler</a></li>
+                    <li class="nav-item"><a class="nav-link @(curController=="AppointmentRequest"?"active":"")" asp-area="Admin" asp-controller="AppointmentRequest" asp-action="Index"><i class="bi bi-calendar2-check"></i> Randevu Talepleri</a></li>
+                </ul>
+            </div>
+            <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button class="btn btn-sm btn-outline-light" type="submit" title="Çıkış">Çıkış</button>
+            </form>
+            <hr class="border-secondary-subtle mt-3" />
+            <div class="small-muted">
+                @DateTime.Now.Year © Yönetim
+            </div>
+        </aside>
+
+        <div class="admin-content d-flex flex-column">
+            <!-- TOPBAR -->
+            <div class="admin-topbar bg-white border-bottom">
+                <div class="container-fluid py-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-secondary d-lg-none" id="btnSidebar" type="button" aria-label="Menüyü Aç/Kapat">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@title</div>
+                            <div class="text-muted small">@curController @("-") @curAction</div>
+                        </div>
+                        <div class="text-muted small">
+                            @(User?.Identity?.IsAuthenticated == true ? ("👤 " + (User.Identity!.Name ?? "admin")) : "")
+                        </div>
+                    </div>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+
+            <!-- PAGE CONTENT -->
+            <main class="container-fluid py-3">
+                @RenderBody()
+            </main>
+
+            <footer class="mt-auto border-top bg-white">
+                <div class="container-fluid small text-muted py-2">
+                    Yapım aşamasında olmayan tek şey müşterinin fikirleri.
+                </div>
+            </footer>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - Klimaci.WebUI - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <div class="offcanvas-backdrop-custom" id="sidebarBackdrop"></div>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        (function () {
+            const body  = document.body;
+            const btn   = document.getElementById('btnSidebar');
+            const btnX  = document.getElementById('btnSidebarClose');
+            const bg    = document.getElementById('sidebarBackdrop');
+            btn?.addEventListener('click', ()=> body.classList.toggle('sidebar-open'));
+            btnX?.addEventListener('click', ()=> body.classList.remove('sidebar-open'));
+            bg?.addEventListener('click', ()=> body.classList.remove('sidebar-open'));
+
+            // Collapsible groups with localStorage
+            const groups = document.querySelectorAll('.menu-group');
+            groups.forEach(g=>{
+                const key = 'admgrp:' + g.dataset.group;
+                // restore
+                const saved = localStorage.getItem(key);
+                if(saved === 'open') g.classList.add('open');
+                if(saved === 'closed') g.classList.remove('open');
+                // toggle
+                g.querySelector('.section-toggle')?.addEventListener('click', ()=>{
+                    g.classList.toggle('open');
+                    localStorage.setItem(key, g.classList.contains('open') ? 'open' : 'closed');
+                });
+            });
+
+            // Menu search filter
+            const search = document.getElementById('menuSearch');
+            const allLinks = [...document.querySelectorAll('.admin-sidebar a.nav-link')];
+            search?.addEventListener('input', (e)=>{
+                const q = (e.target.value || '').toString().toLowerCase().trim();
+                if(!q){
+                    allLinks.forEach(a=> a.parentElement.style.display = '');
+                    return;
+                }
+                allLinks.forEach(a=>{
+                    const txt = a.textContent.toLowerCase();
+                    a.parentElement.style.display = txt.includes(q) ? '' : 'none';
+                });
+            });
+        })();
+    </script>
+
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

@@ -11,37 +11,19 @@ namespace Klimaci.DAL
     public class UnitOfWork : IUnitOfWork
     {
         private readonly IEFContext _context;
-        private readonly Dictionary<string, dynamic> _repositoryDictionary;
-        public UnitOfWork(IEFContext context)
-        {
-            _context = context;
-            _repositoryDictionary = new Dictionary<string, dynamic>();
-        }
-        public async Task<int> SaveChangesAsync()
-        {
-            try
-            {
-                return await _context.SaveChangesAsync(new CancellationToken());
-            }
-            catch (DbUpdateException ex)
-            {
-
-                throw new DbUpdateException(ex.InnerException?.Message ?? ex.Message, ex);
-            }
-        }
+        private readonly Dictionary<Type, object> _repos = new();
+        public UnitOfWork(IEFContext context) { _context = context; }
+        public Task<int> SaveChangesAsync() => _context.SaveChangesAsync(default);
 
         public IBaseRepository<T> Repository<T>() where T : class, IEntity
         {
-            var entityName = typeof(T).Name;
-
-            var repositoryCreated = _repositoryDictionary.ContainsKey(entityName);
-            if (!repositoryCreated)
+            var t = typeof(T);
+            if (!_repos.TryGetValue(t, out var repo))
             {
-                var newRepository = new BaseRepository<T>(_context);
-                _repositoryDictionary.Add(entityName, newRepository);
+                repo = new BaseRepository<T>(_context);
+                _repos.Add(t, repo);
             }
-
-            return _repositoryDictionary[entityName];
+            return (IBaseRepository<T>)repo;
         }
     }
 }

@@ -317,5 +317,20 @@ namespace Klimaci.DAL
                 throw new Exception(ex.Message);
             }
         }
+
+        public async Task<(IReadOnlyList<T> Items, int Total)> PagedAsync(
+            int page, int pageSize,
+            Expression<Func<T, bool>> predicate = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+            bool ignoreQueryFilter = false)
+        {
+            var q = (await GetDbSet()).AsNoTracking();
+            if (ignoreQueryFilter) q = q.IgnoreQueryFilters();
+            if (predicate != null) q = q.Where(predicate);
+            var total = await q.CountAsync();
+            q = orderBy != null ? orderBy(q) : q.OrderBy(x => x.AutoID);
+            var items = await q.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return (items, total);
+        }
     }
 }

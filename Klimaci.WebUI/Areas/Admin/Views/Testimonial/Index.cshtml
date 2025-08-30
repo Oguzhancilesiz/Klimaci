@@ -1,0 +1,77 @@
+﻿@using Klimaci.Core.Paging
+@using Klimaci.Entity
+@model PagedResult<Testimonial>
+@{
+    ViewData["Title"] = "Referanslar";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="container py-3">
+    <h1>Referanslar</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-5"><input name="search" class="form-control" value="@Context.Request.Query["search"]" placeholder="Başlık / şirket" /></div>
+        <div class="col-md-3">
+            <select name="sortBy" class="form-select">
+                <option value="">Başlık</option>
+                <option value="createddate" selected="@(Context.Request.Query["sortBy"]=="createddate")">Oluşturma</option>
+                <option value="displayorder" selected="@(Context.Request.Query["sortBy"]=="displayorder")">Sıra</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="desc" class="form-select">
+                <option value="false" selected="@(Context.Request.Query["desc"]=="false")">Artan</option>
+                <option value="true" selected="@(Context.Request.Query["desc"]=="true")">Azalan</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid"><button class="btn btn-primary">Filtrele</button></div>
+    </form>
+
+    <div class="d-flex mb-2"><a class="btn btn-success ms-auto" asp-action="Create">Yeni</a></div>
+
+    <table class="table table-striped align-middle">
+        <thead><tr><th style="width:80px">Sıra</th><th>Başlık</th><th>Şirket</th><th>Yayın</th><th class="text-end" style="width:220px">İşlem</th></tr></thead>
+        <tbody id="rows">
+            @foreach (var e in Model.Items)
+            {
+                <tr data-id="@e.Id">
+                    <td><input type="number" class="form-control form-control-sm order" value="@e.DisplayOrder" /></td>
+                    <td>@e.Title</td>
+                    <td>@e.Company</td>
+                    <td><span class="badge @(e.IsPublished?"bg-success":"bg-secondary")">@(e.IsPublished ? "Açık" : "Kapalı")</span></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@e.Id">Düzenle</a>
+                        <form method="post" asp-action="Delete" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@e.Id" /><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Silinsin mi?')">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var totalPages = (int)Math.Ceiling((double)Model.Total / Model.PageSize); var page = Model.Page;
+    }
+    <nav>
+        <ul class="pagination">
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                <li class="page-item @(p==page?"active":"")"><a class="page-link" href="?page=@p&pageSize=@Model.PageSize">@p</a></li>
+            }
+        </ul>
+    </nav>
+
+    <button id="btnReorder" class="btn btn-secondary mt-2">Sıraları Kaydet</button>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnReorder').addEventListener('click', async ()=>{
+          const items=[...document.querySelectorAll('#rows tr')].map(tr=>({ id: tr.dataset.id, displayOrder: parseInt(tr.querySelector('.order').value||0)}));
+          await fetch('@Url.Action("Reorder")',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+          location.reload();
+        });
+    </script>
+}

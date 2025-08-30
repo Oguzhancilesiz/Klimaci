@@ -1,0 +1,53 @@
+﻿@using Klimaci.Entity
+@model List<MenuItem>
+@{
+    var menu = (NavigationMenu)ViewBag.Menu;
+    ViewData["Title"] = $"{menu.Title} - Öğeler";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var parents = Model.ToDictionary(x => x.Id, x => x.Title);
+}
+<div class="container py-3">
+    <h1>@menu.Title <small class="text-muted">(@menu.Slug)</small></h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <div class="d-flex mb-2">
+        <a class="btn btn-success ms-auto" asp-action="CreateItem" asp-route-menuId="@menu.Id">Yeni Öğe</a>
+    </div>
+
+    <table class="table table-striped align-middle">
+        <thead><tr><th style="width:80px">Sıra</th><th>Başlık</th><th>URL</th><th>Parent</th><th>Yayın</th><th class="text-end" style="width:220px">İşlem</th></tr></thead>
+        <tbody id="rows">
+            @foreach (var it in Model.OrderBy(x => x.DisplayOrder))
+            {
+                <tr data-id="@it.Id">
+                    <td><input type="number" class="form-control form-control-sm order" value="@it.DisplayOrder" /></td>
+                    <td>@it.Title</td>
+                    <td class="text-truncate" style="max-width:320px">@it.Url</td>
+                    <td>@(it.ParentId.HasValue && parents.ContainsKey(it.ParentId.Value) ? parents[it.ParentId.Value] : "-")</td>
+                    <td><span class="badge @(it.IsPublished?"bg-success":"bg-secondary")">@(it.IsPublished ? "Açık" : "Kapalı")</span></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" asp-action="EditItem" asp-route-id="@it.Id">Düzenle</a>
+                        <form method="post" asp-action="DeleteItem" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@it.Id" /><input type="hidden" name="menuId" value="@menu.Id" />
+                            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Silinsin mi?')">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button id="btnReorder" class="btn btn-secondary">Sıraları Kaydet</button>
+    <a asp-action="Index" class="btn btn-light">Geri</a>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnReorder').addEventListener('click', async ()=>{
+          const items=[...document.querySelectorAll('#rows tr')].map(tr=>({ id: tr.dataset.id, displayOrder: parseInt(tr.querySelector('.order').value||0)}));
+          await fetch('@Url.Action("Reorder", new { menuId = menu.Id })',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+          location.reload();
+        });
+    </script>
+}

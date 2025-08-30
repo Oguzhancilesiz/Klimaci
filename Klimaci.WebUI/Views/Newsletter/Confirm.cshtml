@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Abonelik Onayı";
+    var ok = (bool)(ViewBag.Ok ?? false);
+    var err = (string)(ViewBag.Error ?? "");
+}
+<div class="container py-5">
+    <h1>Abonelik Onayı</h1>
+    @if (ok)
+    {
+        <div class="alert alert-success">Aboneliğin doğrulandı. Hoş geldin.</div>
+    }
+    else
+    {
+        <div class="alert alert-danger">Onay başarısız: @err</div>
+    }
+</div>

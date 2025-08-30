@@ -26,38 +26,37 @@ namespace Klimaci.DAL
             return base.Set<TEntity>();
         }
 
-        async Task<int> IEFContext.SaveChangesAsync(CancellationToken cancellationToken)
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            string id = Guid.NewGuid().ToString().Replace("-", "") + DateTime.Now.ToBinary();
-            DateTime now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             foreach (var entry in ChangeTracker.Entries<IEntity>())
             {
-                // NOT: tek '|' değil '||' olacak (aşağıda 2. maddede var)
-                if (entry.State == EntityState.Added || entry.State == EntityState.Modified || entry.State == EntityState.Deleted)
-                {
+                if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
                     entry.Entity.ModifiedDate = now;
-                    if (entry.State == EntityState.Added)
-                    {
-                        entry.Entity.CreatedDate = now;
-                        entry.Entity.Status = Core.Enums.Status.Active;
-                    }
+
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedDate = now;
+                    if (entry.Entity.Status == 0) entry.Entity.Status = Core.Enums.Status.Active;
+                }
+
+                if (entry.State == EntityState.Deleted)
+                {
+                    entry.State = EntityState.Modified;
+                    entry.Entity.Status = Core.Enums.Status.Deleted;
+                    entry.Entity.ModifiedDate = now;
                 }
             }
-            int rowCount = 0;
-            try
-            {
-                return await base.SaveChangesAsync(cancellationToken);
-            }
+
+            try { return await base.SaveChangesAsync(cancellationToken); }
             catch (DbUpdateException ex)
             {
-                // İç hatayı koru; dilersen mesajı yüzeye çıkar:
-                throw new DbUpdateException(ex.InnerException?.Message ?? ex.Message, ex);
-                // En sade hali: just `throw;`
+                // Stack trace’i koru
+                throw;
             }
-
-            return rowCount;
         }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.ConfigureWarnings(warnings =>
@@ -68,33 +67,8 @@ namespace Klimaci.DAL
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //Mapping İşlemleri
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseMap<IEntity>).Assembly);
-
-
-            var adminId = new Guid("b23a6ab8-adc5-4145-8e2f-35adc69bedfb");
-            var hasher = new PasswordHasher<AppUser>();
-            var adminUser = new AppUser
-            {
-                Id = adminId,
-                UserName = "admin",
-                NormalizedUserName = "ADMIN",
-                Email = "admin@onlyik.com",
-                NormalizedEmail = "ADMIN@ONLYIK.COM",
-                EmailConfirmed = true,
-                SecurityStamp = new Guid("3c761708-15e3-49f4-9c02-87fa5c71a8a6").ToString("D"),
-                Status = Core.Enums.Status.Active,
-                CreatedDate = new DateTime(2025, 08, 16),// Örnek olarak bugünün tarihi
-                ModifiedDate = new DateTime(2025, 08, 16)
-
-
-            };
-
-            // Şifre hash’ini oluştur (örnek: Admin123!)
-            adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin123!");
-
-            modelBuilder.Entity<AppUser>().HasData(adminUser);
             base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseMap<IEntity>).Assembly);
 
         }
     }

@@ -1,0 +1,65 @@
+﻿@using Klimaci.DTO.NewsletterDTOs
+@model NewsletterUpdateDTO
+@{
+    ViewData["Title"] = "Abone Düzenle";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="container py-3">
+    <h1>Abone Düzenle</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <form asp-action="Edit" method="post" class="vstack gap-3">
+                <input type="hidden" asp-for="Id" />
+                <div>
+                    <label class="form-label">E-posta</label>
+                    <input asp-for="Email" type="email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div>
+                    <label class="form-label">Ad</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mt-2 d-flex gap-2">
+                    <button class="btn btn-primary">Kaydet</button>
+                    <a asp-action="Index" class="btn btn-light">Geri</a>
+                </div>
+                @Html.AntiForgeryToken()
+            </form>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="fw-semibold mb-2">Hızlı İşlemler</div>
+                    <form method="post" asp-action="Confirm" class="d-grid mb-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button class="btn btn-success">Onayla</button>
+                    </form>
+                    <form method="post" asp-action="Unsubscribe" class="d-grid mb-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button class="btn btn-warning">Çıkar (Unsubscribe)</button>
+                    </form>
+                    <form method="post" asp-action="Delete" class="d-grid">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button class="btn btn-outline-danger" onclick="return confirm('Silinsin mi?')">Sil</button>
+                    </form>
+                    <div class="form-text mt-2">
+                        Durumu burada göstermiyorum çünkü controller yalnızca DTO dönüyor.
+                        Çok istiyorsan Edit GET’inde ViewBag ile <code>ConfirmedAt / UnsubscribedAt</code> geçirirsin, ben de rozet basarım.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

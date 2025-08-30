@@ -7,7 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Concrete\" />
+    <PackageReference Include="Mapster" Version="7.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Klimaci.DTO\Klimaci.DTO.csproj" />
+    <ProjectReference Include="..\Klimaci.Entity\Klimaci.Entity.csproj" />
   </ItemGroup>
 
 </Project>

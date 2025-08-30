@@ -1,0 +1,107 @@
+﻿@using Klimaci.DTO
+@using Klimaci.DTO.PartnerDTOs
+
+@model PartnerUpdateDTO
+@{
+    ViewData["Title"] = "Partner Düzenle";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var gallery = (IEnumerable<GalleryItemDTO>)(ViewBag.Gallery ?? Enumerable.Empty<GalleryItemDTO>());
+}
+<div class="container py-3">
+    <h1>Partner Düzenle</h1>
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" class="vstack gap-3">
+        <input type="hidden" asp-for="Id" />
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <label class="form-label">Başlık</label>
+                <input asp-for="Title" class="form-control" id="title" />
+                <label class="form-label mt-2">Website</label>
+                <input asp-for="Website" class="form-control" />
+                <div class="form-check mt-2">
+                    <input class="form-check-input" asp-for="IsFeatured" />
+                    <label class="form-check-label" for="IsFeatured">Öne Çıkan</label>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <label class="form-label">Slug</label>
+                <div class="input-group">
+                    <input asp-for="Slug" class="form-control" id="slug" />
+                    <button type="button" class="btn btn-outline-secondary" id="btnSlug">Kontrol</button>
+                </div>
+                <div class="form-text" id="slugHint"></div>
+
+                <label class="form-label mt-2">SEO Title</label>
+                <input asp-for="SeoTitle" class="form-control" />
+                <label class="form-label mt-2">SEO Description</label>
+                <textarea asp-for="SeoDescription" rows="2" class="form-control"></textarea>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-6"><label class="form-label">Sıra</label><input asp-for="DisplayOrder" class="form-control" /></div>
+                    <div class="col-6 d-flex align-items-end"><div class="form-check"><input class="form-check-input" asp-for="IsPublished" /><label class="form-check-label" for="IsPublished">Yayında</label></div></div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">Yeni Görseller</label>
+                    <input type="file" name="newFiles" multiple class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Galeri -->
+        <div class="mt-4">
+            <label class="form-label">Mevcut Galeri</label>
+            <div id="gallery" class="row g-2">
+                @foreach (var gi in gallery)
+                {
+                    <div class="col-6 col-md-3" data-id="@gi.MediaId">
+                        <div class="card h-100">
+                            <img src="@gi.FileUrl" class="card-img-top" style="aspect-ratio:1/1; object-fit:cover;" />
+                            <div class="card-body p-2 d-flex align-items-center gap-1">
+                                <input type="radio" name="cover" class="form-check-input" @(gi.IsCover ? "checked" : "") />
+                                <button type="button" class="btn btn-sm btn-outline-secondary up">↑</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary down">↓</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove">Sil</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="mt-2"><button type="button" id="btnSaveGallery" class="btn btn-secondary">Galeriyi Kaydet</button></div>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary">Kaydet</button>
+            <a asp-action="Index" class="btn btn-light">Geri</a>
+        </div>
+        @Html.AntiForgeryToken()
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        async function slugCheck(){ const title=document.getElementById('title').value||''; const slug=document.getElementById('slug').value||''; const id='@Model.Id';
+          const res=await fetch('@Url.Action("SlugCheck")',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,slug,excludeId:id})});
+          const d=await res.json(); const input=document.getElementById('slug'); const hint=document.getElementById('slugHint');
+          input.value=d.finalSlug||d.FinalSlug; const ok=d.isUnique??d.IsUnique; hint.textContent= ok?'Uygun.':'Çakışma vardı, düzeltildi.'; hint.className= ok?'form-text text-success':'form-text text-warning';
+        }
+        document.getElementById('btnSlug').addEventListener('click', slugCheck);
+
+        // Galeri
+        const gallery=document.getElementById('gallery'); function getCard(el){ return el.closest('[data-id]'); }
+        gallery?.addEventListener('click',(ev)=>{
+          const t=ev.target;
+          if(t.classList.contains('up')){ const c=getCard(t); const prev=c.previousElementSibling; if(prev) c.parentNode.insertBefore(c,prev); }
+          if(t.classList.contains('down')){ const c=getCard(t); const next=c.nextElementSibling; if(next) c.parentNode.insertBefore(next,c); }
+          if(t.classList.contains('remove')){ getCard(t).remove(); }
+          if(t.tagName==='IMG'){ const c=getCard(t); const r=c.querySelector('input[type=radio][name=cover]'); if(r) r.checked=true; }
+        });
+        document.getElementById('btnSaveGallery')?.addEventListener('click', async ()=>{
+          const cards=[...document.querySelectorAll('#gallery [data-id]')];
+          const mediaIds=cards.map(c=>c.getAttribute('data-id')); const checked=document.querySelector('#gallery input[name=cover]:checked');
+          const coverId=checked? getCard(checked).getAttribute('data-id'): null;
+          await fetch('@Url.Action("GalleryUpdate")',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ ownerId:'@Model.Id', mediaIds, coverMediaId: coverId })});
+          alert('Galeri kaydedildi.');
+        });
+    </script>
+}

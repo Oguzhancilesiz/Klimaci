@@ -1,0 +1,171 @@
+﻿@using System.Text.Json
+@using Klimaci.DTO.DashboardDTOs
+@model AdminDashboardVM
+@{
+    ViewData["Title"] = "Yönetim Paneli";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+
+    var labels = Model.DailySignups.Select(x => x.Date).ToList();
+    var values = Model.DailySignups.Select(x => x.Count).ToList();
+    var labelsJson = JsonSerializer.Serialize(labels);
+    var valuesJson = JsonSerializer.Serialize(values);
+
+    var daysQ = ViewContext.HttpContext.Request.Query["days"].ToString();
+    int currentDays = ViewBag.CurrentDays is int v ? v : 30;
+    int.TryParse(daysQ, out currentDays);
+
+    string percent(double d) => d.ToString("0.##");
+}
+<style>
+    /* Boş boş uzamasın. */
+    .dash-chart { height: 360px; }
+    .dash-chart canvas { width: 100% !important; height: 100% !important; }
+    .dash-table { max-height: 360px; overflow: auto; }
+</style>
+
+<div class="container py-4">
+    <h1 class="mb-4">Dashboard</h1>
+
+    @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_AdminAlerts.cshtml")
+
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Toplam Abone</div>
+                    <div class="fs-3 fw-semibold">@Model.Counters.TotalSubscribers</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Onaylı</div>
+                    <div class="fs-3 fw-semibold">@Model.Counters.Confirmed</div>
+                    <div class="progress mt-2" role="progressbar" aria-label="Onay Oranı"
+                         aria-valuenow="@Model.ConfirmedRate" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width:@percent(Model.ConfirmedRate)%"></div>
+                    </div>
+                    <div class="small text-muted mt-1">@percent(Model.ConfirmedRate)%</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Çıkmış</div>
+                    <div class="fs-3 fw-semibold">@Model.Counters.Unsubscribed</div>
+                    <div class="progress mt-2" role="progressbar" aria-label="Çıkma Oranı"
+                         aria-valuenow="@Model.UnsubscribedRate" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width:@percent(Model.UnsubscribedRate)%"></div>
+                    </div>
+                    <div class="small text-muted mt-1">@percent(Model.UnsubscribedRate)%</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Son 24 Saat</div>
+                    <div class="fs-3 fw-semibold">@Model.Counters.NewLast24h</div>
+                    <div class="small text-muted mt-1">Yeni abone</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-3">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <strong>Günlük Abonelikler</strong>
+                        <form method="get" class="d-flex align-items-center gap-2">
+                            <label class="small text-muted">Gün:</label>
+                            <select name="days" class="form-select form-select-sm" onchange="this.form.submit()">
+                                @{
+                                    int[] opts = new[] { 7, 14, 30, 60, 90 };
+                                    foreach (var d in opts)
+                                    {
+                                        if (d == currentDays)
+                                        {
+                                            <option value="@d" selected>@d</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@d">@d</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                        </form>
+                    </div>
+                    <div class="dash-chart">
+                        <canvas id="signupChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body dash-table">
+                    <strong class="d-block mb-2">Son 10 Abone</strong>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>E-posta</th>
+                                    <th>Durum</th>
+                                    <th>Tarih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var x in Model.RecentSubscribers)
+                                {
+                                    var status = x.UnsubscribedAt != null ? "Çıkmış"
+                                        : x.ConfirmedAt != null ? "Onaylı"
+                                        : "Beklemede";
+                                    <tr>
+                                        <td class="text-truncate" style="max-width:180px" title="@x.Email">@x.Email</td>
+                                        <td>
+                                            @if (status == "Onaylı") { <span class="badge bg-success">Onaylı</span> }
+                                            else if (status == "Çıkmış") { <span class="badge bg-secondary">Çıkmış</span> }
+                                            else { <span class="badge bg-warning text-dark">Beklemede</span> }
+                                        </td>
+                                        <td>@x.CreatedAt.ToLocalTime().ToString("g")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-muted small">En yeni kayıtlar görüntüleniyor.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <script>
+        const labels = @Html.Raw(labelsJson);
+        const values = @Html.Raw(valuesJson);
+
+        const ctx = document.getElementById('signupChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: 'Günlük Abone', data: values, tension: 0.25, fill: false }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                elements: { point: { radius: 2 } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                },
+                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }
+            }
+        });
+    </script>
+}
